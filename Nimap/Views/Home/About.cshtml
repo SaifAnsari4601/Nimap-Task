@@ -1,0 +1,162 @@
+﻿@using System.Data;
+@{
+    ViewBag.Title = "About";
+}
+<link href="~/Content/css/bootstrap.min.css" rel="stylesheet" />
+<link href="~/Content/dataTables.bootstrap5.min.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-3.4.1.min.js"></script>
+<script src="~/Scripts/jquery.dataTables.min.js"></script>
+<script src="~/Scripts/dataTables.bootstrap5.min.js"></script>
+<script>
+    function SelectData() {
+        $.ajax({
+            url: '/home/SelectProduct',
+            type: 'get',
+            dataType: 'json',
+            success: function (res) {
+                $("#tbl tbody").empty()
+                $.each(res, function (i, row) {
+                    $("#tbl tbody").append("<tr><td>" + (i + 1) + "</td><td id='tblpid" + row.id + "'>" + row.id + "</td><td id='tblpname" + row.id + "'>" + row.pname + "</td><td id='tblcid" + row.id + "'>" + row.cid + "</td><td id='tblcname" + row.id + "'>" + row.cname + "</td><td><button class='btn btn-danger' onclick='DeleteData(" + row.id + ")'>Delete</button> <button class='btn btn-warning' onclick='UpdateData(" + row.id + ")'>Edit</button></td></tr>")
+                })
+                $("#tbl").DataTable()
+            },
+            error: function () {
+                alert("Error...")
+            }
+        })
+    }
+    function DeleteData(id) {
+        if (confirm("Are you want to sure delete...")) {
+            $.ajax({
+                url: '/home/InsertProduct',
+                type: 'post',
+                dataType: 'json',
+                data: { "id": id, "action": 3 },
+                success: function (res) {
+                    SelectData()
+                    $("#tbl").DataTable()
+                },
+                error: function () {
+                    alert("Error...")
+                }
+            })
+        }
+    }
+    function UpdateData(id) {
+        $("#id").val(id)
+        $("#pname").val($("#tblpname" + id).text())
+       @if(ViewBag.tbl != null)
+            {
+                foreach (DataRow row in ViewBag.tbl.Rows)
+                {
+                  @:if ($("#tblcname" + id).text() == "@row[1]")
+                    {
+                        @:$("#tblcname_" +@row[0]).attr("selected",true)
+                    }
+                }
+            }
+        $("#btn").val("Update Now")
+    }
+    $(document).ready(function () {
+        $("#at").hide()
+        SelectData()
+        $("#btn").click(function () {
+            if ($("#pname").val() == ''||$("#cid").val() == '') {
+                $("#at").show()
+                $("#at").text("Please fill all field...")
+                return false;
+            }
+            var d = new FormData();
+            $.each($("form").serializeArray(), function (i, field) {
+                d.append(field.name, field.value)
+            })
+            if ($("#btn").val() == "Update Now")
+                d.append("action", 4)
+            else
+                d.append("action", 1)
+            $.ajax({
+                url: '/home/InsertProduct',
+                type: 'post',
+                dataType: 'json',
+                data: d,
+                contentType: false,
+                processData: false,
+                success: function (res) {
+                    SelectData()
+                    $("#tbl").DataTable()
+                    $("#at").hide()
+                    $("form").trigger("reset")
+                    @foreach (DataRow row in ViewBag.tbl.Rows)
+                        {
+                          @:$("#tblcname_" +@row[0]).attr("selected", false)
+                        }
+                    $("#btn").val("Add Now")
+                },
+                error: function () {
+                    alert("Error...")
+                }
+            })
+        })
+    })
+</script>
+<div class="row">
+    <div id="at" class="col-sm-10 mx-auto p-2 mt-5 text-bg-danger alert text-center fs-5 ">
+
+    </div>
+</div>
+<div class="row mt-5">
+    <div class="col-sm-4 mx-auto">
+        <div class="row bd1">
+            <div class="col-sm-12 text-bg-dark  text-center fs-3 p-1 fw-bold">
+                Product
+            </div>
+        </div>
+        <div class="row bd2">
+            <div class="col-sm-12 bg-light px-4 pb-4">
+                <form>
+                    <input type="hidden" name="id" id="id" class="form-control" /><br />
+                    <label style="font-size:18px;">Product Name</label>
+                    <input type="text" name="pname" id="pname" class="form-control" />
+                    <label style="font-size:18px;">Category Name</label>
+                    <select id="cid" name="cid" class="form-control">
+                        <option value="0">---Select Category---</option>
+                        @if (ViewBag.tbl != null)
+                        {
+                            foreach (DataRow row in ViewBag.tbl.Rows)
+                            {
+                                <option id="tblcname_@row[0]" value="@row[0]">@row[1]</option>
+                            }
+                        }
+
+                    </select><br />
+                    <input type="button" value="Add Now" id="btn" class="btn btn-warning fs-5" />
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 rounded-2 mx-auto" id="tb">
+        <div class="row bd1">
+            <div class="col-sm-12 text-bg-dark text-center fs-3 p-1 fw-bold">
+                Product List
+            </div>
+        </div>
+        <div class="row bd2">
+            <div class="col-sm-12 bg-light p-4">
+                <table id="tbl" class="table table-bordered table-hover table-responsive table-striped text-center">
+                    <thead>
+                        <tr>
+                            <th>Sr No</th>
+                            <th>Product Id</th>
+                            <th>Product Name</th>
+                            <th>Category Id</th>
+                            <th>Category Name</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
